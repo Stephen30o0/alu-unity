@@ -1,1 +1,1 @@
-Unity - User Interface
+USER_INTERFACE
