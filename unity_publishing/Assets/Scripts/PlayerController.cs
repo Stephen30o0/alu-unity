@@ -1,144 +1,108 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
-	public float speed = 100f;
-	public Rigidbody rb;
-	private int score;
-	public int health;
-    public Text scoreText;
-    public Text healthText;
-    public GameObject status;
+    public float speed = 10.0f;
+    public int health = 5;
+    private int score = 0;
 
-    // ***** Method 3  | Winner ****************************
+    private Rigidbody rb;
+    public Text scoreText;  // Reference to the ScoreText UI element
+    public Text healthText; // Reference to the HealthText UI element
+    public Text winLoseText; // Reference to the WinLoseText UI element
+    public Image winLoseBG; // Reference to the WinLoseBG UI element
 
     void Start()
-	{
-		score = 0;
-		health = 5;
-        status.gameObject.SetActive(false);
+    {
+        rb = GetComponent<Rigidbody>();
+        UpdateScoreText(); // Update the score text when the game starts
+        UpdateHealthText(); // Update the health text when the game starts
+        winLoseText.gameObject.SetActive(false); // Initially hide WinLoseText
+        winLoseBG.gameObject.SetActive(false); // Initially hide WinLoseBG
     }
-	void FixedUpdate()
-	{
-		var xAxis = Input.GetAxis("Horizontal");
-		var zAxis = Input.GetAxis("Vertical");
 
-		var movementVector = new Vector3(xAxis, 0, zAxis);
-		rb.AddForce(movementVector * speed);
-	}
+    void FixedUpdate()
+    {
+        float moveHorizontal = Input.GetAxis("Horizontal");
+        float moveVertical = Input.GetAxis("Vertical");
 
-	void OnTriggerEnter(Collider other)
-	{
-		if (other.gameObject.CompareTag("Pickup"))
-		{
-			score++;
-            SetScoreText();
-			Destroy(other.gameObject);
-		}
+        Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
+        rb.AddForce(movement * speed);
+    }
 
-		if (other.gameObject.CompareTag("Trap"))
-		{
-			health--;
-			SetHealthText();
-		}
-
-		if (other.gameObject.CompareTag("Goal"))
-		{
-            status.SetActive(true);
-            status.GetComponent<Image>().color = Color.green;
-            status.GetComponentInChildren<Text>().text = "You Win!";
-            status.GetComponentInChildren<Text>().color = Color.black;
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Pickup"))
+        {
+            score++;
+            UpdateScoreText(); // Update the score text when the player collects a coin
+            other.gameObject.SetActive(false);
         }
-	}
+        else if (other.gameObject.CompareTag("Trap"))
+        {
+            health--;
+            UpdateHealthText(); // Update the health text when the player hits a trap
+        }
+        else if (other.gameObject.CompareTag("Goal"))
+        {
+            WinGame(); // Handle the win condition
+        }
+    }
 
     void Update()
     {
-        // Check if health is zero or less
         if (health <= 0)
         {
-            status.SetActive(true);
-            status.GetComponentInChildren<Text>().text = "Game Over!";
-
-            // Call the ReloadScene method to handle scene reloading and resetting
-            StartCoroutine(LoadScene(3));
+            GameOver(); // Handle the game over condition
         }
 
-        // Menu scene
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                SceneManager.LoadScene("menu");
-            }
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            SceneManager.LoadScene("menu");
+        }
     }
 
-    private void ReloadScene()
+    // Method to update the ScoreText UI element with the current score
+    void UpdateScoreText()
     {
-        // Reload the current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        scoreText.text = "Score: " + score.ToString();
     }
 
-    void SetScoreText()
-    {
-        scoreText.text = "Score: "+ score.ToString();
-    }
-
-    void SetHealthText()
+    // Method to update the HealthText UI element with the current health
+    void UpdateHealthText()
     {
         healthText.text = "Health: " + health.ToString();
     }
 
+    // Method to handle the win condition
+    void WinGame()
+    {
+        winLoseText.text = "You Win!";
+        winLoseText.color = Color.black;
+        winLoseBG.color = Color.green;
+        winLoseText.gameObject.SetActive(true); // Show WinLoseText
+        winLoseBG.gameObject.SetActive(true); // Show WinLoseBG
+        StartCoroutine(LoadScene(3)); // Wait 3 seconds before reloading the scene
+    }
+
+    // Method to handle the game over condition
+    void GameOver()
+    {
+        winLoseText.text = "Game Over!";
+        winLoseText.color = Color.white;
+        winLoseBG.color = Color.red;
+        winLoseText.gameObject.SetActive(true); // Show WinLoseText
+        winLoseBG.gameObject.SetActive(true); // Show WinLoseBG
+        StartCoroutine(LoadScene(3)); // Wait 3 seconds before reloading the scene
+    }
+
+    // Coroutine to load the scene after a delay
     IEnumerator LoadScene(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-        ReloadScene();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-    // ***** Method 1 ****************************
-    // void FixedUpdate()
-    // {
-    // 	var pos = transform.position;
-    // 	if (Input.GetKey(KeyCode.LeftArrow))
-    // 	{
-    // 		pos.x = pos.x - speed * Time.deltaTime;
-    // 	}
-    // 	if (Input.GetKey(KeyCode.RightArrow))
-    // 	{
-    // 		pos.x = pos.x + speed * Time.deltaTime;
-    // 	}
-    // 	if (Input.GetKey(KeyCode.UpArrow))
-    // 	{
-    // 		pos.z = pos.z + speed * Time.deltaTime;
-    // 	}
-    // 	if (Input.GetKey(KeyCode.DownArrow))
-    // 	{
-    // 		pos.z = pos.z - speed * Time.deltaTime;
-    // 	}
-    // 	transform.position = pos;
-
-    // }
-
-    // ***** Method 2 ****************************
-    // void FixedUpdate()
-    // {
-    // 	if (Input.GetKey(KeyCode.UpArrow))
-    // 	{
-    // 		rb.AddForce(0, 0, speed * Time.deltaTime);
-    // 	}
-    // 	if (Input.GetKey(KeyCode.DownArrow))
-    // 	{
-    // 		rb.AddForce(0, 0, -speed * Time.deltaTime);
-    // 	}
-    // 	if (Input.GetKey(KeyCode.LeftArrow))
-    // 	{
-    // 		rb.AddForce(-speed * Time.deltaTime, 0, 0);
-    // 	}
-    // 	if (Input.GetKey(KeyCode.RightArrow))
-    // 	{
-    // 		rb.AddForce(speed * Time.deltaTime, 0, 0);
-    // 	}
-    // }
-
-
 }
